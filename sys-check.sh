@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Define color codes
 RED='\033[0;31m'
@@ -52,10 +52,10 @@ check_user_in_group() {
 check_docker_group_permissions() {
     local group="docker"
     if getent group "$group" >/dev/null 2>&1; then
-        echo -e"Group $group ${GREEN}exists.${NC}"
+        echo -e "Group $group ${GREEN}exists.${NC}"
         check_user_in_group "$USER" "$group"
     else
-        echo -e"Group $group ${RED}does not exist.${NC}"
+        echo -e "Group $group ${RED}does not exist.${NC}"
     fi
 }
 
