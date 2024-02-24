@@ -127,9 +127,9 @@ check_ssl_certificate() {
         exit 1
     fi
 
-    local response=$(curl -s -o /dev/null -w "%{http_code}" https://"$domain" 2>/dev/null)
+    local response=$(curl -s -o /dev/null -w "%{http_code}" --ssl https://"$domain" 2>/dev/null)
 
-    if [ "$response" == "200" ]; then
+    if [ "$response" == "200" ] || [ "$response" == "301" ] || [ "$response" == "307" ]; then
         echo -e "${GREEN}SSL certificate for domain $domain is valid.${NC}"
     else
         echo -e "${RED}SSL certificate for domain $domain is not valid or could not be checked.${NC}"
