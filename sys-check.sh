@@ -111,7 +111,7 @@ get_host_info() {
     echo -e "${YELLOW}----Hostname and IP verification${NC}"
     hostname=$(hostname)
     ip_address_public=$(curl -s ifconfig.me)
-    ip_address_private=$(hostname -I)
+    ip_address_private=$(hostname -i)
 
     echo -e "Hostname: ${GREEN}$hostname${NC}"
     echo -e "Public IP Address: ${GREEN}$ip_address_public${NC}"
