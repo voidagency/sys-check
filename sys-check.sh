@@ -184,7 +184,7 @@ print_system_info() {
         echo -e "${YELLOW}CPU Cores:${NC} $(nproc)"
 
         # For non-macOS systems (assuming Linux)
-        echo "${YELLOW}Processes:${NC}"
+        echo -e "${YELLOW}Processes:${NC}"
         ps -e -o stat= | awk '{
             if ($1 ~ /^[RSDT]/) running++;
             else if ($1 ~ /^[Z]/) zombie++;
@@ -198,11 +198,11 @@ print_system_info() {
 
         num_threads=$(ps -eLf | wc -l)
         echo -e "${YELLOW}Number of threads:${NC} $((num_threads - 1))"
-        echo "${YELLOW}Physical Memory:${NC}"
+        echo -e "${YELLOW}Physical Memory:${NC}"
         free -h
         echo
 
-        echo "${YELLOW}Load Average:${NC}"
+        echo -e "${YELLOW}Load Average:${NC}"
         uptime
     fi
 }
