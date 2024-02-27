@@ -5,7 +5,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
-
+os=$(uname)
 # Function to check if a list of ports is in use
 check_ports() {
     local ports=("$@")
@@ -177,9 +177,34 @@ check_communication() {
 # Function to print CPU and memory information
 print_system_info() {
     echo -e "${YELLOW}----Printing system information...${NC}"
-    # echo -e "CPU Cores: $(nproc)"
     echo -e "${YELLOW}Memory and CPU Load:${NC}"
-    top -l 1 -s 0 | awk '/Processes/ || /PhysMem/ || /Load Avg/{print}'
+    if [ "$os" == "Darwin" ]; then
+        top -l 1 -s 0 | awk '/Processes/ || /PhysMem/ || /Load Avg/{print}'
+    else
+        echo -e "${YELLOW}CPU Cores:${NC} $(nproc)"
+
+        # For non-macOS systems (assuming Linux)
+        echo "${YELLOW}Processes:${NC}"
+        ps -e -o stat= | awk '{
+            if ($1 ~ /^[RSDT]/) running++;
+            else if ($1 ~ /^[Z]/) zombie++;
+            else if ($1 ~ /^[S]/) sleeping++;
+        } END {
+            print "Running:", running;
+            print "Sleeping:", sleeping;
+            print "Zombie:", zombie;
+        }'
+        echo
+
+        num_threads=$(ps -eLf | wc -l)
+        echo -e "${YELLOW}Number of threads:${NC} $((num_threads - 1))"
+        echo "${YELLOW}Physical Memory:${NC}"
+        free -h
+        echo
+
+        echo "${YELLOW}Load Average:${NC}"
+        uptime
+    fi
 }
 
 # Function to curl subdomains
