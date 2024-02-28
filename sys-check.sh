@@ -112,6 +112,9 @@ print_docker_info() {
     else
         echo -e "Log driver is not set to ${RED}json-file.${NC}"
     fi
+
+    echo -e "${YELLOW}Docker File system${NC}"
+    docker system df
 }
 
 # Function to get the hostname
