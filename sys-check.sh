@@ -102,8 +102,16 @@ print_docker_info() {
     #     fi
     # done
 
-    echo "Number of Log Files:"
+    echo -e "Number of Log Files:"
     docker inspect --format='{{.LogPath}}' $(docker ps -q) | wc -l
+    docker_info=$(docker info)
+
+    # Check if log driver is json-file and max size is 100m
+    if [[ $docker_info =~ "Logging Driver: json-file" ]]; then
+        echo -e "Log driver is set to ${GREEN}json-file.${NC}"
+    else
+        echo -e "Log driver is not set to ${RED}json-file.${NC}"
+    fi
 }
 
 # Function to get the hostname
