@@ -148,8 +148,9 @@ check_ssl_certificate() {
 }
 
 check_nginx_conf() {
+	local project="$1"
 	# Get the container ID of the running NGINX container
-	container_id=$(docker ps | grep nginx | awk '{print $1}')
+	container_id=$(docker ps | grep "${project}_nginx" | awk '{print $1}' | head -n 1)
 
 	# Extract NGINX configuration from the container
 	nginx_config=$(docker exec $container_id nginx -T)
@@ -334,12 +335,14 @@ main() {
 		docker info | grep -q "Swarm: active"
 		if [ $? -ne 0 ]; then
 			check_communication "$1"
+			check_nginx_conf "$1"
+
 		else
 			check_swarm_communication $"1"
+			check_nginx_conf "$1"
 		fi
 	fi
 
-	check_nginx_conf
 	# Call the function to print Docker information
 	print_docker_info
 	print_system_info
