@@ -12,8 +12,9 @@ This script provides various functionalities to check the status and configurati
     `chmod +x docker_system_checker.sh`
 
 4.  **Run the Script**: Execute the script by running the following command:
-    `./docker_system_checker.sh [domain_name]`
+    `./docker_system_checker.sh [project_name] [domain_name]`
 
+    Replace `[project_name]` with the project name used for container names (for easypanel it should simply be the project name). If not provided, Docker container communicatio will be aborted.
     Replace `[domain_name]` with the domain name for which you want to check SSL certificates and curl subdomains. This argument is optional. If not provided, SSL certificate and subdomain checks will be skipped.
 
 
