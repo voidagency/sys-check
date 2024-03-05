@@ -163,20 +163,21 @@ check_nginx_conf() {
 # Function to check communication between containers
 check_communication() {
 	echo -e "${YELLOW}----Checking docker internal communication"
-	nextjs_container_id=$(docker ps --format "{{.ID}} {{.Names}}" | grep "next" | awk '{print $1}')
-	drupal_container_id=$(docker ps --format "{{.ID}} {{.Names}}" | grep "drupal" | awk '{print $1}')
-	proxy_front_container_id=$(docker ps --format "{{.ID}} {{.Names}}" | grep "nginx" | awk '{print $1}')
+	local project="$1"
+	nextjs_container_id=$(docker ps --format "{{.ID}} {{.Names}}" | grep "${project}_next" | awk '{print $1}')
+	drupal_container_id=$(docker ps --format "{{.ID}} {{.Names}}" | grep "${project}_drupal" | awk '{print $1}')
+	proxy_front_container_id=$(docker ps --format "{{.ID}} {{.Names}}" | grep "${project}_nginx" | awk '{print $1}')
 	traefik_container_id=$(docker ps --format "{{.ID}} {{.Names}}" | grep "traefik" | awk '{print $1}')
 
-	nextjs_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$nextjs_container_id")
-	drupal_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$drupal_container_id")
-	proxy_front_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$proxy_front_container_id")
-	traefik_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$traefik_container_id")
+	# nextjs_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.NetworkID}}:{{.IPAddress}}{{end}}' "$nextjs_container_id")
+	# drupal_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.NetworkID}}:{{.IPAddress}}{{end}}' "$drupal_container_id")
+	# proxy_front_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.NetworkID}}:{{.IPAddress}}{{end}}' "$proxy_front_container_id")
+	# traefik_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.NetworkID}}:{{.IPAddress}}{{end}}' "$traefik_container_id")
 
-	echo -e "${GREEN}Next.js Container ID : $nextjs_container_id || IP: $nextjs_ip${NC}"
-	echo -e "${GREEN}Drupal Container ID : $drupal_container_id || IP: $drupal_ip${NC}"
-	echo -e "${GREEN}Nginx Container ID : $proxy_front_container_id || IP: $proxy_front_ip${NC}"
-	echo -e "${GREEN}Traefik Container ID : $traefik_container_id || IP: $traefik_ip${NC}"
+	echo -e "${GREEN}Next.js Container ID : $nextjs_container_id${NC}"
+	echo -e "${GREEN}Drupal Container ID : $drupal_container_id${NC}"
+	echo -e "${GREEN}Nginx Container ID : $proxy_front_container_id${NC}"
+	echo -e "${GREEN}Traefik Container ID : $traefik_container_id${NC}"
 
 	nextsjs_ports=$(docker port "$nextjs_container_id")
 	drupal_ports=$(docker port "$drupal_container_id")
@@ -188,7 +189,7 @@ check_communication() {
 	echo -e "${YELLOW}Nginx Ports : \n${NC}$proxy_front_ports"
 	echo -e "${YELLOW}Traefik Ports : \n${NC}$traefik_ports"
 
-	response=$(docker exec "$nextjs_container_id" sh -c "if command -v curl &>/dev/null; then curl -s -o /dev/null -w \"%{http_code}\" http://\"$drupal_ip\":8080; else wget -q -O /dev/null --server-response http://\"$drupal_ip\":8080 2>&1 | awk \"/HTTP\// {print \$2}\"; fi")
+	response=$(docker exec "$nextjs_container_id" sh -c "if command -v curl &>/dev/null; then curl -s -o /dev/null -w \"%{http_code}\" http://\"${project}_drupal\":8080; else wget -q -O /dev/null --server-response http://\"${project}_drupal\":8080 2>&1 | awk \"/HTTP\// {print \$2}\"; fi")
 	if [ "$response" == "200" ] || [ "$response" == "301" ]; then
 		echo -e "${GREEN}Communication between containers was successful.${NC}"
 	else
@@ -250,12 +251,23 @@ curl_subdomains() {
 
 check_swarm_communication() {
 	echo -e "${YELLOW}----Checking Docker internal communication using Docker Swarm${NC}"
+	local project="$1"
 
 	# Retrieve the IDs of the services
-	nextjs_service_id=$(docker service ps -f "name=nextjs" -q --no-trunc | head -n 1)
-	drupal_service_id=$(docker service ps -f "name=drupal" -q --no-trunc | head -n 1)
-	proxy_front_service_id=$(docker service ps -f "name=nginx" -q --no-trunc | head -n 1)
-	traefik_service_id=$(docker service ps -f "name=traefik" -q --no-trunc | head -n 1)
+	nextjs_service=$(docker service ps --format "{{.Name}} {{.ID}}" -f "name=${project}_nextjs" "${project}_nextjs" -q --no-trunc | head -n 1)
+	drupal_service=$(docker service ps --format "{{.Name}} {{.ID}}" -f "name=${project}_drupal" "${project}_drupal" -q --no-trunc | head -n 1)
+	proxy_front_service=$(docker service ps --format "{{.Name}} {{.ID}}" -f "name=${project}_nginx" "${project}_nginx" -q --no-trunc | head -n 1)
+	traefik_service=$(docker service ps --format "{{.Name}} {{.ID}}" -f "name=traefik" -q --no-trunc | head -n 1)
+
+
+	nextjs_service_name=$(echo "$nextjs_service" | awk '{print $1}')
+	nextjs_service_id=$(echo "$nextjs_service" | awk '{print $2}')
+	drupal_service_name=$(echo "$drupal_service" | awk '{print $1}')
+	drupal_service_id=$(echo "$drupal_service" | awk '{print $2}')
+	proxy_front_service_name=$(echo "$proxy_front_service" | awk '{print $1}')
+	proxy_front_service_id=$(echo "$proxy_front_service" | awk '{print $2}')
+	traefik_service_name=$(echo "$traefik_service" | awk '{print $1}')
+	traefik_service_id=$(echo "$traefik_service" | awk '{print $2}')
 
 	# Retrieve the tasks (containers) associated with each service
 	nextjs_container_id=$(docker inspect --format '{{.Status.ContainerStatus.ContainerID}}' "$nextjs_service_id")
@@ -264,15 +276,15 @@ check_swarm_communication() {
 	traefik_container_id=$(docker inspect --format '{{.Status.ContainerStatus.ContainerID}}' "$traefik_service_id")
 
 	# Retrieve the IPs of the containers
-	nextjs_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$nextjs_container_id")
-	drupal_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$drupal_container_id")
-	proxy_front_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$proxy_front_container_id")
-	traefik_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$traefik_container_id")
+	# nextjs_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$nextjs_container_id")
+	# drupal_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$drupal_container_id")
+	# proxy_front_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$proxy_front_container_id")
+	# traefik_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$traefik_container_id")
 
-	echo -e "${GREEN}Next.js Container ID : $nextjs_container_id || IP: $nextjs_ip${NC}"
-	echo -e "${GREEN}Drupal Container ID : $drupal_container_id || IP: $drupal_ip${NC}"
-	echo -e "${GREEN}Nginx Container ID : $proxy_front_container_id || IP: $proxy_front_ip${NC}"
-	echo -e "${GREEN}Traefik Container ID : $traefik_container_id || IP: $traefik_ip${NC}"
+	echo -e "${GREEN}Next.js Container ID : $nextjs_container_id${NC}"
+	echo -e "${GREEN}Drupal Container ID : $drupal_container_id${NC}"
+	echo -e "${GREEN}Nginx Container ID : $proxy_front_container_id${NC}"
+	echo -e "${GREEN}Traefik Container ID : $traefik_container_id${NC}"
 
 	# Print the container ports
 	nextjs_ports=$(docker port "$nextjs_container_id")
@@ -286,7 +298,7 @@ check_swarm_communication() {
 	echo -e "${YELLOW}Traefik Ports : \n${NC}$traefik_ports"
 
 	# Check communication between Next.js and Drupal
-	response=$(docker exec "$nextjs_container_id" sh -c "if command -v curl &>/dev/null; then curl -s -o /dev/null -w \"%{http_code}\" http://\"$drupal_ip\":8080; else wget -q -O /dev/null --server-response http://\"$drupal_ip\":8080 2>&1 | awk \"/HTTP\// {print \$2}\"; fi")
+	response=$(docker exec "$nextjs_container_id" sh -c "if command -v curl &>/dev/null; then curl -s -o /dev/null -w \"%{http_code}\" http://\"$drupal_service_name\":8080; else wget -q -O /dev/null --server-response http://\"$drupal_service_name\":8080 2>&1 | awk \"/HTTP\// {print \$2}\"; fi")
 	if [ "$response" == "200" ] || [ "$response" == "301" ]; then
 		echo -e "${GREEN}Communication between containers was successful.${NC}"
 	else
@@ -307,20 +319,24 @@ main() {
 	# Call the Docker Hub connection check function
 	check_docker_hub
 	get_host_info
-	if [ $# -eq 0 ]; then
-		echo "Error: Domain name not provided."
-		echo "Usage: $0 <domain>"
+	if [ -z "$2" ]; then
+		echo -e "{$RED}Domain name not provided. Skipping all domain related checks {$NC}"
+		echo -e "Usage: $0 <project_name> <domain>"
 	else
-		curl_subdomains "$1" "www" "backend" "media"
-		check_ssl_certificate "$1"
+		curl_subdomains "$2" "www" "backend" "media"
+		check_ssl_certificate "$2"
 	fi
 
-	# Check if Docker Swarm is running
-	docker info | grep -q "Swarm: active"
-	if [ $? -ne 0 ]; then
-		check_communication
+	if [ -z "$1" ]; then
+    echo "Usage: $0 <project_name> <domain>"
 	else
-		check_swarm_communication
+		# Check if Docker Swarm is running
+		docker info | grep -q "Swarm: active"
+		if [ $? -ne 0 ]; then
+			check_communication "$1"
+		else
+			check_swarm_communication $"1"
+		fi
 	fi
 
 	check_nginx_conf
