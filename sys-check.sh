@@ -338,7 +338,7 @@ main() {
 			check_nginx_conf "$1"
 
 		else
-			check_swarm_communication $"1"
+			check_swarm_communication "$1"
 			check_nginx_conf "$1"
 		fi
 	fi
