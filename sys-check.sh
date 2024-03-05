@@ -258,7 +258,7 @@ check_swarm_communication() {
 	nextjs_service=$(docker service ps --format "{{.Name}} {{.ID}}" -f "name=${project}_nextjs" "${project}_nextjs" -q --no-trunc | head -n 1)
 	drupal_service=$(docker service ps --format "{{.Name}} {{.ID}}" -f "name=${project}_drupal" "${project}_drupal" -q --no-trunc | head -n 1)
 	proxy_front_service=$(docker service ps --format "{{.Name}} {{.ID}}" -f "name=${project}_nginx" "${project}_nginx" -q --no-trunc | head -n 1)
-	traefik_service=$(docker service ps --format "{{.Name}} {{.ID}}" -f "name=traefik" -q --no-trunc | head -n 1)
+	traefik_service=$(docker service ps --format "{{.Name}} {{.ID}}" -f "name=traefik" "traefik" -q --no-trunc | head -n 1)
 
 
 	nextjs_service_name=$(echo "$nextjs_service" | awk '{print $1}')
@@ -299,7 +299,7 @@ check_swarm_communication() {
 	echo -e "${YELLOW}Traefik Ports : \n${NC}$traefik_ports"
 
 	# Check communication between Next.js and Drupal
-	response=$(docker exec "$nextjs_container_id" sh -c "if command -v curl &>/dev/null; then curl -s -o /dev/null -w \"%{http_code}\" http://\"$drupal_service_name\":8080; else wget -q -O /dev/null --server-response http://\"$drupal_service_name\":8080 2>&1 | awk \"/HTTP\// {print \$2}\"; fi")
+	response=$(docker exec "$nextjs_container_id" sh -c "if command -v curl &>/dev/null; then curl -s -o /dev/null -w \"%{http_code}\" http://\"${project}_drupal\":8080; else wget -q -O /dev/null --server-response http://\"${project}_drupal\":8080 2>&1 | awk \"/HTTP\// {print \$2}\"; fi")
 	if [ "$response" == "200" ] || [ "$response" == "301" ]; then
 		echo -e "${GREEN}Communication between containers was successful.${NC}"
 	else
