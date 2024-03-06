@@ -113,6 +113,21 @@ print_docker_info() {
 		echo -e "Log driver is not set to ${RED}json-file.${NC}"
 	fi
 
+	grep_option="-Po" # Default to -P option for systems other than macOS
+	if [ "$os" == "Darwin" ]; then
+		grep_option="-eo" # Use -e option for macOS
+	fi
+	docker_daemon_config="/etc/docker/daemon.json"
+	if [ -f "$docker_daemon_config" ]; then
+		echo "Docker daemon configuration file found at $docker_daemon_config"
+		max_size=$(grep "$grep_option" '(?<="max-size": ")[^"]*' "$docker_daemon_config")
+
+		# Print the value of max-size
+		echo "Docker max-size: $max_size"
+	fi
+
+	# Extract max-size from Docker daemon configuration
+
 	echo -e "${YELLOW}Docker File system${NC}"
 	docker system df
 }
@@ -260,7 +275,6 @@ check_swarm_communication() {
 	proxy_front_service=$(docker service ps --format "{{.Name}} {{.ID}}" -f "name=${project}_nginx" "${project}_nginx" -q --no-trunc | head -n 1)
 	traefik_service=$(docker service ps --format "{{.Name}} {{.ID}}" -f "name=traefik" "traefik" -q --no-trunc | head -n 1)
 
-
 	nextjs_service_name=$(echo "$nextjs_service" | awk '{print $1}')
 	nextjs_service_id=$(echo "$nextjs_service" | awk '{print $2}')
 	drupal_service_name=$(echo "$drupal_service" | awk '{print $1}')
@@ -329,7 +343,7 @@ main() {
 	fi
 
 	if [ -z "$1" ]; then
-    echo "Usage: $0 <project_name> <domain>"
+		echo "Usage: $0 <project_name> <domain>"
 	else
 		# Check if Docker Swarm is running
 		docker info | grep -q "Swarm: active"
