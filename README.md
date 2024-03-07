@@ -31,7 +31,7 @@ This script provides various functionalities to check the status and configurati
 
 
 
-Replace `[project_name]` with the project name used for container names (for [easypanel](https://easypanel.io/) it should simply be the project name). If not provided, Docker container communication will be aborted.
+Replace `[project_name]` with the project name used for container names (for [easypanel](https://easypanel.io/) it should simply be the project name). If not provided, Docker container communication checks will be aborted.
 
 
 
