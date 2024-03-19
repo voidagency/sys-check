@@ -15,7 +15,7 @@ This script provides various functionalities to check the status and configurati
 
 1.  **Download the Script**:
 
-`curl -sSL https://github.com/hamzahasbi/sys-check/raw/main/sys-check.sh -o docker_system_checker.sh`
+`curl -sSL https://github.com/voidagency/sys-check/raw/main/sys-check.sh -o docker_system_checker.sh`
 
 
 
